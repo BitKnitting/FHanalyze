@@ -1,0 +1,283 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>FHanalyze package &mdash; FHanalyze  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="FHanalyze package" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> FHanalyze
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">FHanalyze</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">FHanalyze package</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">FHanalyze package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#intro">Intro</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authors.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">FHanalyze</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">FHanalyze package</a> &raquo;</li>
+        
+      <li>FHanalyze package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/FHanalyze.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="fhanalyze-package">
+<h1>FHanalyze package<a class="headerlink" href="#fhanalyze-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="intro">
+<h2>Intro<a class="headerlink" href="#intro" title="Permalink to this headline">¶</a></h2>
+<p>The FHanalyze package analyzes the readings that were stored into the Raspberry Pi’s mongo db
+by calls to the <a class="reference external" href="https://fhmonitor.readthedocs.io/en/latest/FHmonitor.html#intro">FHmonitor package</a>.</p>
+<span class="target" id="module-FHanalyze.analyze"></span><dl class="class">
+<dt id="FHanalyze.analyze.Analyze">
+<em class="property">class </em><code class="sig-prename descclassname">FHanalyze.analyze.</code><code class="sig-name descname">Analyze</code><span class="sig-paren">(</span><em class="sig-param">mongodb_path='mongodb://127.0.0.1:27017'</em>, <em class="sig-param">db_str='FitHome'</em>, <em class="sig-param">collection_name='aggregate'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Analyze class connects to the mongodb collection storing the active
+and reactive power readings saved by FHmonitor.</p>
+<p>To get an instance of the Analyze class, pass into __init__:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mongodb_path</strong> – The mongodb connection string.  See the
+<a class="reference external" href="https://docs.mongodb.com/manual/reference/connection-string/">connection string</a>
+documentation., defaults to “mongodb://127.0.0.1:27017”.</p></li>
+<li><p><strong>db_str</strong> – The database within mongodb that holds the readings,
+defaults to “FitHome”.</p></li>
+<li><p><strong>collection_name</strong> – The collection within the database where the
+readings are stored.,defaults to “aggregate”.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="FHanalyze.analyze.Analyze.get_DataFrame_for_date">
+<code class="sig-name descname">get_DataFrame_for_date</code><span class="sig-paren">(</span><em class="sig-param">date='*'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_DataFrame_for_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_DataFrame_for_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="FHanalyze.analyze.Analyze.get_isodate_list">
+<code class="sig-name descname">get_isodate_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_isodate_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_isodate_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of dates is isodate format that contain active and
+reactive power readings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of isodates that contain power readings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="FHanalyze.analyze.Analyze.get_leakage_amount">
+<code class="sig-name descname">get_leakage_amount</code><span class="sig-paren">(</span><em class="sig-param">date='*'</em>, <em class="sig-param">start_time='*'</em>, <em class="sig-param">end_time='*'</em>, <em class="sig-param">quantile=0.3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_leakage_amount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_leakage_amount" title="Permalink to this definition">¶</a></dt>
+<dd><p>[summary]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>date</strong> (<em>str</em><em>, </em><em>optional</em>) – [description], defaults to ‘*’</p></li>
+<li><p><strong>start_time</strong> (<em>str</em><em>, </em><em>optional</em>) – [description], defaults to ‘*’</p></li>
+<li><p><strong>end_time</strong> (<em>str</em><em>, </em><em>optional</em>) – [description], defaults to ‘*’</p></li>
+<li><p><strong>quantile</strong> (<em>float</em><em>, </em><em>optional</em>) – [description], defaults to .3</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="FHanalyze.analyze.logger">
+<code class="sig-prename descclassname">FHanalyze.analyze.</code><code class="sig-name descname">logger</code><em class="property"> = &lt;Logger FHanalyze.analyze (WARNING)&gt;</em><a class="headerlink" href="#FHanalyze.analyze.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the Raspberry Pi’s mongo db for active and reactive power readings
+stored by calls to the FHmonitor pypi package.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral float-left" title="FHanalyze package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Margaret Johnson
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

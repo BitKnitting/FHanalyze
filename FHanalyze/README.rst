@@ -26,7 +26,7 @@ Analyze power readings provided by the FHmonitor package.
 Features
 --------
 
-* TODO
+* Gathers the readings stored by FHmonitor into the Raspberry Pi's mongodb and provides a variety of data analysis.
 
 Credits
 -------
