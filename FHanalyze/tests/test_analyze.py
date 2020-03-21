@@ -25,8 +25,36 @@ def test_get_list_of_dates_with_readings(analyze_instance):
     isodate_list = analyze_instance.get_isodate_list()
     # There may be no readings.  If this is the case, the len of list = 0.
     if (len(isodate_list) > 0):
-        # Instead of asssert test, check if can format - if not, exception.
+        # Instead of asssert test, check if can create a date from the
+        # string.  If possible, the string is in isodate format.
         try:
-            (date.fromisoformat(i) for i in isodate_list)
+            [date.fromisoformat(date_str) for date_str in isodate_list]
         except ValueError as e:
             logging.error(f' {e}')
+
+# Pass in a date strig that is not isodate formatted.
+# This test fails.
+
+
+def test_bad_date_to_get_DataFrame(analyze_instance):
+
+    bad_date_str = "02-13-2020"
+    analyze_instance.get_DataFrame_for_date(bad_date_str)
+    # Not using an assert.  Try/except error handling.
+
+
+def test_date_not_in_readings(analyze_instance):
+    date_not_in_readings_str = "2020-12-30"
+    analyze_instance.get_DataFrame_for_date(date_not_in_readings_str)
+    # Not using an assert.  Try/except error handling.
+
+
+def test_readings_for_date(analyze_instance):
+    date_with_readings = "2020-01-13"
+    df = analyze_instance.get_DataFrame_for_date(date_with_readings)
+    assert not df.empty
+
+
+def test_get_all_readings(analyze_instance):
+    df = analyze_instance.get_DataFrame_for_date("*")
+    assert not df.empty
