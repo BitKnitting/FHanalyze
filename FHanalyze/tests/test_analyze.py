@@ -32,6 +32,7 @@ def test_get_list_of_dates_with_readings(analyze_instance):
         except ValueError as e:
             logging.error(f' {e}')
 
+
 # Pass in a date strig that is not isodate formatted.
 # This test fails.
 
@@ -44,17 +45,25 @@ def test_bad_date_to_get_DataFrame(analyze_instance):
 
 
 def test_date_not_in_readings(analyze_instance):
-    date_not_in_readings_str = "2020-12-30"
+    date_not_in_readings_str = "2019-12-30"
     analyze_instance.get_DataFrame_for_date(date_not_in_readings_str)
     # Not using an assert.  Try/except error handling.
 
 
 def test_readings_for_date(analyze_instance):
-    date_with_readings = "2020-01-13"
-    df = analyze_instance.get_DataFrame_for_date(date_with_readings)
+    # Assumes above test passed
+    isodate_list = analyze_instance.get_isodate_list()
+    logging.debug(f'List of isodates: {isodate_list}')
+    logging.debug(f'Date being used to query readings: {isodate_list[0]}')
+    df = analyze_instance.get_DataFrame_for_date(isodate_list[0])
+    logging.debug(df.describe())
     assert not df.empty
+
+# Getting all the readings can take a long time.
 
 
 def test_get_all_readings(analyze_instance):
     df = analyze_instance.get_DataFrame_for_date("*")
+    print(df.describe())
+    logging.debug(df.describe())
     assert not df.empty
