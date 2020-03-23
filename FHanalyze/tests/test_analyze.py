@@ -5,6 +5,7 @@
 from FHanalyze.analyze import Analyze
 from datetime import date
 import pytest
+import time
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -55,8 +56,12 @@ def test_readings_for_date(analyze_instance):
     isodate_list = analyze_instance.get_isodate_list()
     logging.debug(f'List of isodates: {isodate_list}')
     logging.debug(f'Date being used to query readings: {isodate_list[0]}')
+    start_time = time.perf_counter()
     df = analyze_instance.get_DataFrame_for_date(isodate_list[0])
+    end_time = time.perf_counter()
     logging.debug(df.describe())
+    logging.debug(
+        f'It took {end_time-start_time:.2f} seconds to get the DataFrame')
     assert not df.empty
 
 # Getting all the readings can take a long time.
@@ -67,3 +72,8 @@ def test_get_all_readings(analyze_instance):
     print(df.describe())
     logging.debug(df.describe())
     assert not df.empty
+
+
+def test_get_always_on_watts(analyze_instance):
+    always_on_watts = analyze_instance.get_always_on_watts()
+    logging.debug(f'Always on watts: {always_on_watts}')

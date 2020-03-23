@@ -70,8 +70,27 @@ class Analyze:
                 f'There are no readings in the database for {date_str}')
         return self._set_datetimeindex(df)
 
-    def get_always_on_watts(self, date_str):
-        pass
+    def get_always_on_watts(self, date_str=ALL_READINGS, start_time='*',
+                            end_time='*', quantile=.3):
+        """Return the amount of power (in watts) that are waisted by appliances that
+        are always plugged in and use electricity, even when the appliance is
+        not being used.
+
+        :param date_str: Either a date in isodate format to use readings in the
+            calculation for that date or '*' to use all available dates for
+            the calculation.  Defaults to '*'
+        :param start_time: [description], defaults to '*'
+        :type start_time: str, optional
+        :param end_time: [description], defaults to '*'
+        :type end_time: str, optional
+        :param quantile: [description], defaults to .3
+        :type quantile: float, optional
+        """
+        if date_str not in ALL_READINGS:
+            self._check_good_isodate(date_str)  # If not errors out.
+        always_on_watts = self._calc_always_on(
+            date_str, start_time, end_time, quantile)
+        return always_on_watts
     #############################################################
     # Internal methods
     #############################################################
@@ -202,7 +221,7 @@ class Analyze:
             try:
                 # Will raise a ValueError if cannot
                 # convert from date_str to date datetype.
-                dt = date.fromisoformat(date_str)
+                dt = self._check_good_isodate(date_str)
                 day_id = self._make_objectid(dt)
                 dt_next = dt + timedelta(days=1)
                 next_day_id = self._make_objectid(dt_next)
@@ -238,3 +257,36 @@ class Analyze:
         df.index = df.index.round('s').tz_localize(None)
         df.drop(['timestamp', '_id'], axis=1, inplace=True)
         return df
+
+    def _check_good_isodate(self, date_str):
+        """internal method that returns a Date datatype
+        by converting the isodate date_str into a Date.
+        An exception is raised if the date_str is not
+        isodate formatted.
+
+        :param date_str: isodate formatted date string.
+
+        """
+        dt = None
+        try:
+            dt = date.fromisoformat(date_str)
+        except ValueError as e:
+            handle_exception(e)
+        return dt
+
+    def _calc_always_on(self,
+                        date_str, start_time, end_time, quantile):
+        """ Internal method to determine how much of the electricity used
+        during the date_str dates and start_time end_time time period
+        is wasted.
+        :param date_str: Either a date in isodate format to use readings in the
+            calculation for that date or '*' to use all available dates for
+            the calculation.
+        """
+        df = self.get_DataFrame_for_date(date_str)
+        # If filtering on a time range, both start and end time need
+        # to be defined.
+        if start_time not in '*' and end_time not in '*':
+            df = df.between_time(start_time, end_time)
+        watt_leakage = float(df.quantile(quantile))
+        return watt_leakage
