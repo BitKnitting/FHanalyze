@@ -75,5 +75,9 @@ def test_get_all_readings(analyze_instance):
 
 
 def test_get_always_on_watts(analyze_instance):
+    start_time = time.perf_counter()
     always_on_watts = analyze_instance.get_always_on_watts()
-    logging.debug(f'Always on watts: {always_on_watts}')
+    end_time = time.perf_counter()
+    logging.debug(f'Always on watts: {always_on_watts:.2f}')
+    logging.debug(
+        f'It took {end_time-start_time:.2f} seconds to get the DataFrame')
