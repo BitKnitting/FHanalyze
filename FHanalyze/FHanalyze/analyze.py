@@ -9,15 +9,14 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-"""Query the Raspberry Pi's mongo db for active and reactive power readings
-stored by calls to the FHmonitor pypi package.
-"""
+
 ALL_READINGS = '*'
 
 
 class Analyze:
-    """The Analyze class connects to the mongodb collection storing the active
-    and reactive power readings saved by FHmonitor.
+    """The Analyze class connects to the mongodb collection that
+    contains the power readings saved by the
+    `FHmonitor <https://fhmonitor.readthedocs.io/en/latest/>`_.
 
     To get an instance of the Analyze class, pass into __init__:
 
@@ -60,10 +59,11 @@ class Analyze:
         specific date or for all dates.
 
         :param date: isodate formatted date or "*".
-        defaults to "*"
+            Defaults to "*"
         :return: A pandas DataFrame with a dateindex and a
-        column named 'pA' of active power readings.
+            column named 'pA' of active power readings.
         """
+
         df = self._get_df_no_datetimeindex(date_str)
         if df.empty:
             handle_exception(
@@ -72,19 +72,23 @@ class Analyze:
 
     def get_always_on_watts(self, date_str=ALL_READINGS, start_time='*',
                             end_time='*', quantile=.3):
-        """Return the amount of power (in watts) that are waisted by appliances that
+        """Return the amount of power (in watts) that are wasted by appliances that
         are always plugged in and use electricity, even when the appliance is
         not being used.
 
         :param date_str: Either a date in isodate format to use readings in the
             calculation for that date or '*' to use all available dates for
             the calculation.  Defaults to '*'
-        :param start_time: [description], defaults to '*'
-        :type start_time: str, optional
-        :param end_time: [description], defaults to '*'
-        :type end_time: str, optional
-        :param quantile: [description], defaults to .3
-        :type quantile: float, optional
+        :param start_time: Use readings that are taken at this time.  The
+            start_time is the beginning of an amount of time to filter
+            results.  Defaults to '*'
+        :param end_time: Use readings that are taken before this time.
+            end_time is used with start_time to filter readings to be
+            within the time between start_time and end_time.  Defaults to '*'
+        :param quantile: A floating point number between 0 and 1 that cuts
+            the distribution of readings.  For example, a value of .3 means
+            the always_on_watts value is taken at the place where 30% of the
+            readings are found.  Defaults to .3.
         """
         if date_str not in ALL_READINGS:
             self._check_good_isodate(date_str)  # If not errors out.
@@ -112,21 +116,6 @@ class Analyze:
                 handle_exception(e)
             db = client[self.db_str]
             self.collection = db[self.collection_name]
-
-    def get_leakage_amount(self, date='*', start_time='*', end_time='*',
-                           quantile=.3):
-        """[summary]
-
-        :param date: [description], defaults to '*'
-        :type date: str, optional
-        :param start_time: [description], defaults to '*'
-        :type start_time: str, optional
-        :param end_time: [description], defaults to '*'
-        :type end_time: str, optional
-        :param quantile: [description], defaults to .3
-        :type quantile: float, optional
-        """
-        pass
 
     def _get_first_and_last_isodate(self):
         """Internal method that finds the first date and last date in which
@@ -156,6 +145,15 @@ class Analyze:
         return datetime.fromtimestamp(ts).isoformat()
 
     def _filter_out_dates_with_no_readings(self, first_isodate, last_isodate):
+        """This internal method checks the mongo db to see if the dates in the
+        first_isodate and last_isodates range have power readings.
+
+        :param first_isodate: first date in isodate format that should
+        be checked until the last_isodate.
+        :param last_isodate: the last date between the first date in
+        isodate format.
+        :return: lists of dates in isodate format that have power readings.
+        """
         isodates_list = []
         try:
             # First get the string isodates into date types.
@@ -178,6 +176,11 @@ class Analyze:
         return isodates_list
 
     def _there_is_a_reading(self, dt):
+        """An internal method that determines if there are power
+        readings for the date being passed in.
+        :param dt: A date in (python) date format
+        :return: True if there is a reading for the date.
+        """
 
         # Make an object ID using the date.
         day_id = self._make_objectid(dt)
@@ -214,6 +217,17 @@ class Analyze:
         return object_id
 
     def _get_df_no_datetimeindex(self, date_str):
+        """An internal method that returns a DataFrame that includes mongo db's
+        object id.  The object id has not been coverted to a datetimeindex.
+
+        :param date_str: Either a date in isodate format to use readings in the
+            calculation for that date or '*' to use all available dates for
+            the calculation.  Defaults to '*'
+        :raises a: Exception if the records can't be retrieved or the date_str
+            isn't of isodate format (or '*').
+        :return: [description]
+        :rtype: [type]
+        """
         df = pd.DataFrame()
         self._connect_to_collection()
         if date_str not in ALL_READINGS:  # Get eadings for a specific isodate.
@@ -246,9 +260,10 @@ class Analyze:
         into a datetimeindex for the power readings.
         :param df: DataFrame created by calling the
         _get_df_no_datetimeindex() method.
-        :type df: [type]
-        :return: [description]
-        :rtype: [type]
+        :type df: A pandas DataFrame where one of the columns is
+        the mongodb object id labeled as _id.
+        :return: A DataFrame with the _id column making up the
+        datetimeindex and then removed from the DataFrame.
         """
         df['timestamp'] = df['_id'].astype('|S').str.slice(
             start=0, stop=8).apply(int, base=16)

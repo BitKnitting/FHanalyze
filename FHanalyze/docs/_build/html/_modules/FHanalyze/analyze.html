@@ -155,7 +155,8 @@
 <span class="kn">from</span> <span class="nn">pymongo</span> <span class="kn">import</span> <span class="n">MongoClient</span>
 <span class="kn">from</span> <span class="nn">pymongo.errors</span> <span class="kn">import</span> <span class="n">ConfigurationError</span>
 <span class="kn">from</span> <span class="nn">bson.objectid</span> <span class="kn">import</span> <span class="n">ObjectId</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">date</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -167,28 +168,90 @@
 
 
 <div class="viewcode-block" id="Analyze"><a class="viewcode-back" href="../../FHanalyze.html#FHanalyze.analyze.Analyze">[docs]</a><span class="k">class</span> <span class="nc">Analyze</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;The Analyze class connects to the mongodb collection storing the active</span>
-<span class="sd">    and reactive power readings saved by FHmonitor.</span>
+    <span class="sd">&quot;&quot;&quot;The Analyze class connects to the mongodb collection that</span>
+<span class="sd">    contains the power readings saved by the</span>
+<span class="sd">    `FHmonitor &lt;https://fhmonitor.readthedocs.io/en/latest/&gt;`_.</span>
 
 <span class="sd">    To get an instance of the Analyze class, pass into __init__:</span>
 
 <span class="sd">    :param mongodb_path: The mongodb connection string.  See the</span>
 <span class="sd">        `connection string</span>
 <span class="sd">        &lt;https://docs.mongodb.com/manual/reference/connection-string/&gt;`_</span>
-<span class="sd">        documentation., defaults to &quot;mongodb://127.0.0.1:27017&quot;.</span>
+<span class="sd">        documentation.  Defaults to &quot;mongodb://127.0.0.1:27017&quot;.</span>
 
-<span class="sd">    :param db_str: The database within mongodb that holds the readings,</span>
-<span class="sd">        defaults to &quot;FitHome&quot;.</span>
+<span class="sd">    :param db_str: The database within mongodb that holds the readings.</span>
+<span class="sd">        Defaults to &quot;FitHome&quot;.</span>
 
 <span class="sd">    :param collection_name: The collection within the database where the</span>
-<span class="sd">        readings are stored.,defaults to &quot;aggregate&quot;.</span>
+<span class="sd">        readings are stored. Defaults to &quot;aggregate&quot;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mongodb_path</span><span class="o">=</span><span class="s2">&quot;mongodb://127.0.0.1:27017&quot;</span><span class="p">,</span>
                  <span class="n">db_str</span><span class="o">=</span><span class="s2">&quot;FitHome&quot;</span><span class="p">,</span> <span class="n">collection_name</span><span class="o">=</span><span class="s2">&quot;aggregate&quot;</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mongodb_path</span> <span class="o">=</span> <span class="n">mongodb_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_str</span> <span class="o">=</span> <span class="n">db_str</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collection_name</span> <span class="o">=</span> <span class="n">collection_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Analyze.get_isodate_list"><a class="viewcode-back" href="../../FHanalyze.html#FHanalyze.analyze.Analyze.get_isodate_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_isodate_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the list of dates in isodate format that contain active and</span>
+<span class="sd">        reactive power readings.</span>
+
+<span class="sd">        :return: list of isodates that contain power readings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connect_to_collection</span><span class="p">()</span>  <span class="c1"># Will error out if can&#39;t connect.</span>
+        <span class="c1"># Will error out is can&#39;t get first, last date from mongodb.</span>
+        <span class="n">isodate_first</span><span class="p">,</span> <span class="n">isodate_last</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_first_and_last_isodate</span><span class="p">()</span>
+
+        <span class="n">iso_days_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_out_dates_with_no_readings</span><span class="p">(</span><span class="n">isodate_first</span><span class="p">,</span>
+                                                                <span class="n">isodate_last</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;first date: </span><span class="si">{isodate_first}</span><span class="s1"> Last date: </span><span class="si">{isodate_last}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">iso_days_list</span></div>
+
+<div class="viewcode-block" id="Analyze.get_DataFrame_for_date"><a class="viewcode-back" href="../../FHanalyze.html#FHanalyze.analyze.Analyze.get_DataFrame_for_date">[docs]</a>    <span class="k">def</span> <span class="nf">get_DataFrame_for_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date_str</span><span class="o">=</span><span class="n">ALL_READINGS</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the active Power readings for a</span>
+<span class="sd">        specific date or for all dates.</span>
+
+<span class="sd">        :param date: isodate formatted date or &quot;*&quot;.</span>
+<span class="sd">            Defaults to &quot;*&quot;</span>
+<span class="sd">        :return: A pandas DataFrame with a dateindex and a</span>
+<span class="sd">            column named &#39;pA&#39; of active power readings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_df_no_datetimeindex</span><span class="p">(</span><span class="n">date_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">handle_exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;There are no readings in the database for </span><span class="si">{date_str}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_datetimeindex</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Analyze.get_always_on_watts"><a class="viewcode-back" href="../../FHanalyze.html#FHanalyze.analyze.Analyze.get_always_on_watts">[docs]</a>    <span class="k">def</span> <span class="nf">get_always_on_watts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date_str</span><span class="o">=</span><span class="n">ALL_READINGS</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span>
+                            <span class="n">end_time</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">quantile</span><span class="o">=.</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the amount of power (in watts) that are wasted by appliances that</span>
+<span class="sd">        are always plugged in and use electricity, even when the appliance is</span>
+<span class="sd">        not being used.</span>
+
+<span class="sd">        :param date_str: Either a date in isodate format to use readings in the</span>
+<span class="sd">            calculation for that date or &#39;*&#39; to use all available dates for</span>
+<span class="sd">            the calculation.  Defaults to &#39;*&#39;</span>
+<span class="sd">        :param start_time: Use readings that are taken at this time.  The</span>
+<span class="sd">            start_time is the beginning of an amount of time to filter</span>
+<span class="sd">            results.  Defaults to &#39;*&#39;</span>
+<span class="sd">        :param end_time: Use readings that are taken before this time.</span>
+<span class="sd">            end_time is used with start_time to filter readings to be</span>
+<span class="sd">            within the time between start_time and end_time.  Defaults to &#39;*&#39;</span>
+<span class="sd">        :param quantile: A floating point number between 0 and 1 that cuts</span>
+<span class="sd">            the distribution of readings.  For example, a value of .3 means</span>
+<span class="sd">            the always_on_watts value is taken at the place where 30% of the</span>
+<span class="sd">            readings are found.  Defaults to .3.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">date_str</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALL_READINGS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_good_isodate</span><span class="p">(</span><span class="n">date_str</span><span class="p">)</span>  <span class="c1"># If not errors out.</span>
+        <span class="n">always_on_watts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_always_on</span><span class="p">(</span>
+            <span class="n">date_str</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">quantile</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">always_on_watts</span></div>
+    <span class="c1">#############################################################</span>
+    <span class="c1"># Internal methods</span>
+    <span class="c1">#############################################################</span>
 
     <span class="k">def</span> <span class="nf">_connect_to_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Internal method that connects to the mongo database using The path,</span>
@@ -200,49 +263,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Create a connection and attempt to access mongod</span>
-
             <span class="n">client</span> <span class="o">=</span> <span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mongodb_path</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">client</span><span class="o">.</span><span class="n">server_info</span><span class="p">()</span>  <span class="c1"># Exception thrown if can&#39;t connect.</span>
             <span class="k">except</span> <span class="n">ConfigurationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
             <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">db_str</span><span class="p">]</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;before setting collection&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">collection</span> <span class="o">=</span> <span class="n">db</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">collection_name</span><span class="p">]</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Able to connect.  Collection: </span><span class="si">{self.collection}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-<div class="viewcode-block" id="Analyze.get_isodate_list"><a class="viewcode-back" href="../../FHanalyze.html#FHanalyze.analyze.Analyze.get_isodate_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_isodate_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get a list of dates is isodate format that contain active and</span>
-<span class="sd">        reactive power readings.</span>
-
-<span class="sd">        :return: list of isodates that contain power readings.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_connect_to_collection</span><span class="p">()</span>  <span class="c1"># Will error out if can&#39;t connect.</span>
-        <span class="c1"># Will error out is can&#39;t get first, last date from mongodb.</span>
-        <span class="n">isodate_first</span><span class="p">,</span> <span class="n">isodate_last</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_first_and_last_isodate</span><span class="p">()</span>
-
-        <span class="n">iso_days_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_out_dates_with_no_readings</span><span class="p">(</span><span class="n">isodate_first</span><span class="p">,</span>
-                                                                <span class="n">isodate_last</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;first date: </span><span class="si">{isodate_first}</span><span class="s1">   Last date: </span><span class="si">{isodate_last}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">iso_days_list</span></div>
-
-<div class="viewcode-block" id="Analyze.get_leakage_amount"><a class="viewcode-back" href="../../FHanalyze.html#FHanalyze.analyze.Analyze.get_leakage_amount">[docs]</a>    <span class="k">def</span> <span class="nf">get_leakage_amount</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span>
-                           <span class="n">quantile</span><span class="o">=.</span><span class="mi">3</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;[summary]</span>
-
-<span class="sd">        :param date: [description], defaults to &#39;*&#39;</span>
-<span class="sd">        :type date: str, optional</span>
-<span class="sd">        :param start_time: [description], defaults to &#39;*&#39;</span>
-<span class="sd">        :type start_time: str, optional</span>
-<span class="sd">        :param end_time: [description], defaults to &#39;*&#39;</span>
-<span class="sd">        :type end_time: str, optional</span>
-<span class="sd">        :param quantile: [description], defaults to .3</span>
-<span class="sd">        :type quantile: float, optional</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
-
-<div class="viewcode-block" id="Analyze.get_DataFrame_for_date"><a class="viewcode-back" href="../../FHanalyze.html#FHanalyze.analyze.Analyze.get_DataFrame_for_date">[docs]</a>    <span class="k">def</span> <span class="nf">get_DataFrame_for_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">ALL_READINGS</span><span class="p">):</span>
-        <span class="k">pass</span></div>
 
     <span class="k">def</span> <span class="nf">_get_first_and_last_isodate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Internal method that finds the first date and last date in which</span>
@@ -272,6 +299,15 @@
         <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_filter_out_dates_with_no_readings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_isodate</span><span class="p">,</span> <span class="n">last_isodate</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This internal method checks the mongo db to see if the dates in the</span>
+<span class="sd">        first_isodate and last_isodates range have power readings.</span>
+
+<span class="sd">        :param first_isodate: first date in isodate format that should</span>
+<span class="sd">        be checked until the last_isodate.</span>
+<span class="sd">        :param last_isodate: the last date between the first date in</span>
+<span class="sd">        isodate format.</span>
+<span class="sd">        :return: lists of dates in isodate format that have power readings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">isodates_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># First get the string isodates into date types.</span>
@@ -284,18 +320,38 @@
             <span class="c1"># Go through each date and see if there are readings available.</span>
             <span class="c1"># If readings are available for the date, append the date to</span>
             <span class="c1"># the isodate list in isodate format.</span>
-            <span class="c1"># Get a connection to mongodb if it doesn&#39;t exist.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_connect_to_collection</span><span class="p">()</span>
+
             <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">gen_expr</span><span class="p">:</span>
-                <span class="c1"># Is there at least one reading for this date?</span>
-                <span class="n">isodates_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_there_is_a_reading</span><span class="p">(</span><span class="n">dt</span><span class="p">):</span>
+                    <span class="c1"># Is there at least one reading for this date?</span>
+                    <span class="n">isodates_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">isodates_list</span>
 
-        <span class="k">return</span> <span class="n">isodates_list</span>
+    <span class="k">def</span> <span class="nf">_there_is_a_reading</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;An internal method that determines if there are power</span>
+<span class="sd">        readings for the date being passed in.</span>
+<span class="sd">        :param dt: A date in (python) date format</span>
+<span class="sd">        :return: True if there is a reading for the date.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_make_objectid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">isodate_string</span><span class="p">):</span>
+        <span class="c1"># Make an object ID using the date.</span>
+        <span class="n">day_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_objectid</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">dt_next</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">next_day_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_objectid</span><span class="p">(</span><span class="n">dt_next</span><span class="p">)</span>
+        <span class="c1"># Get a connection to mongodb if it doesn&#39;t exist.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connect_to_collection</span><span class="p">()</span>
+        <span class="c1"># Find out if there are any readings.</span>
+        <span class="c1"># It seems more intuitive to me for the query to use equal</span>
+        <span class="c1"># instead of lt and gt, but I couldn&#39;t find an eq?</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">count</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;$gt&#39;</span><span class="p">:</span> <span class="n">day_id</span><span class="p">,</span> <span class="s1">&#39;$lt&#39;</span><span class="p">:</span> <span class="n">next_day_id</span><span class="p">}})</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_make_objectid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;An internal method that takes in an isodate and returns an object id</span>
 <span class="sd">        that can be used to query readings of that date. The object id in the</span>
 <span class="sd">        mongodb is a string of 12 bytes.  The first 4 bytes is the unix</span>
@@ -306,14 +362,103 @@
 <span class="sd">        :param isodate_string: The isodate that will be turned into an object</span>
 <span class="sd">        id.date.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_date</span><span class="p">(</span><span class="n">isodate_string</span><span class="p">)</span>
         <span class="c1"># Get the timestamp as a 4 byte hex string</span>
         <span class="n">ts_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:x}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())))</span>
         <span class="c1"># Create an object id starting with the time stamp string then padded</span>
         <span class="c1"># with 00&#39;s to have 12 hex bytes represented within the object id</span>
         <span class="c1"># string.</span>
         <span class="n">object_id</span> <span class="o">=</span> <span class="n">ObjectId</span><span class="p">(</span><span class="n">ts_string</span> <span class="o">+</span> <span class="s2">&quot;0000000000000000&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">object_id</span></div>
+        <span class="k">return</span> <span class="n">object_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_df_no_datetimeindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date_str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;An internal method that returns a DataFrame that includes mongo db&#39;s</span>
+<span class="sd">        object id.  The object id has not been coverted to a datetimeindex.</span>
+
+<span class="sd">        :param date_str: Either a date in isodate format to use readings in the</span>
+<span class="sd">            calculation for that date or &#39;*&#39; to use all available dates for</span>
+<span class="sd">            the calculation.  Defaults to &#39;*&#39;</span>
+<span class="sd">        :raises a: Exception if the records can&#39;t be retrieved or the date_str</span>
+<span class="sd">            isn&#39;t of isodate format (or &#39;*&#39;).</span>
+<span class="sd">        :return: [description]</span>
+<span class="sd">        :rtype: [type]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connect_to_collection</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">date_str</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALL_READINGS</span><span class="p">:</span>  <span class="c1"># Get eadings for a specific isodate.</span>
+            <span class="c1"># Check to make sure the date_str is a valid isodate.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Will raise a ValueError if cannot</span>
+                <span class="c1"># convert from date_str to date datetype.</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_good_isodate</span><span class="p">(</span><span class="n">date_str</span><span class="p">)</span>
+                <span class="n">day_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_objectid</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+                <span class="n">dt_next</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">next_day_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_objectid</span><span class="p">(</span><span class="n">dt_next</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">find</span><span class="p">(</span>
+                        <span class="p">{</span><span class="s2">&quot;_id&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;$gt&#39;</span><span class="p">:</span> <span class="n">day_id</span><span class="p">,</span> <span class="s1">&#39;$lt&#39;</span><span class="p">:</span> <span class="n">next_day_id</span><span class="p">}},</span>
+                        <span class="p">{</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Pa&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}))</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">collection</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Pa&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span> <span class="nf">_set_datetimeindex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;internal method to convert the object id column (_id)</span>
+<span class="sd">        into a datetimeindex for the power readings.</span>
+<span class="sd">        :param df: DataFrame created by calling the</span>
+<span class="sd">        _get_df_no_datetimeindex() method.</span>
+<span class="sd">        :type df: A pandas DataFrame where one of the columns is</span>
+<span class="sd">        the mongodb object id labeled as _id.</span>
+<span class="sd">        :return: A DataFrame with the _id column making up the</span>
+<span class="sd">        datetimeindex and then removed from the DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;|S&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span>
+            <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span><span class="s1">&#39;UTC&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tz_convert</span><span class="p">(</span><span class="s1">&#39;US/Pacific&#39;</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;_id&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span> <span class="nf">_check_good_isodate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date_str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;internal method that returns a Date datatype</span>
+<span class="sd">        by converting the isodate date_str into a Date.</span>
+<span class="sd">        An exception is raised if the date_str is not</span>
+<span class="sd">        isodate formatted.</span>
+
+<span class="sd">        :param date_str: isodate formatted date string.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">date_str</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dt</span>
+
+    <span class="k">def</span> <span class="nf">_calc_always_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">date_str</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">quantile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Internal method to determine how much of the electricity used</span>
+<span class="sd">        during the date_str dates and start_time end_time time period</span>
+<span class="sd">        is wasted.</span>
+<span class="sd">        :param date_str: Either a date in isodate format to use readings in the</span>
+<span class="sd">            calculation for that date or &#39;*&#39; to use all available dates for</span>
+<span class="sd">            the calculation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_DataFrame_for_date</span><span class="p">(</span><span class="n">date_str</span><span class="p">)</span>
+        <span class="c1"># If filtering on a time range, both start and end time need</span>
+        <span class="c1"># to be defined.</span>
+        <span class="k">if</span> <span class="n">start_time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">&#39;*&#39;</span> <span class="ow">and</span> <span class="n">end_time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">between_time</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+        <span class="n">watt_leakage</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">quantile</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">watt_leakage</span></div>
 </pre></div>
 
            </div>
