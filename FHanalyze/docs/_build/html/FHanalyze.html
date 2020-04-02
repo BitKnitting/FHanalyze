@@ -87,7 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">FHanalyze package</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">FHanalyze package</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#intro">Intro</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#analyze-class">Analyze class</a></li>
 </ul>
 </li>
 </ul>
@@ -163,58 +163,84 @@
             
   <div class="section" id="fhanalyze-package">
 <h1>FHanalyze package<a class="headerlink" href="#fhanalyze-package" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="intro">
-<h2>Intro<a class="headerlink" href="#intro" title="Permalink to this headline">¶</a></h2>
 <p>The FHanalyze package analyzes the readings that were stored into the Raspberry Pi’s mongo db
 by calls to the <a class="reference external" href="https://fhmonitor.readthedocs.io/en/latest/FHmonitor.html#intro">FHmonitor package</a>.</p>
+<div class="section" id="analyze-class">
+<h2>Analyze class<a class="headerlink" href="#analyze-class" title="Permalink to this headline">¶</a></h2>
+<p>The analyze class takes the power readings from the mongodb store and provides methods to analyze
+the readings.</p>
 <span class="target" id="module-FHanalyze.analyze"></span><dl class="class">
 <dt id="FHanalyze.analyze.Analyze">
 <em class="property">class </em><code class="sig-prename descclassname">FHanalyze.analyze.</code><code class="sig-name descname">Analyze</code><span class="sig-paren">(</span><em class="sig-param">mongodb_path='mongodb://127.0.0.1:27017'</em>, <em class="sig-param">db_str='FitHome'</em>, <em class="sig-param">collection_name='aggregate'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Analyze class connects to the mongodb collection storing the active
-and reactive power readings saved by FHmonitor.</p>
+<dd><p>The Analyze class connects to the mongodb collection that
+contains the power readings saved by the
+<a class="reference external" href="https://fhmonitor.readthedocs.io/en/latest/">FHmonitor</a>.</p>
 <p>To get an instance of the Analyze class, pass into __init__:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mongodb_path</strong> – The mongodb connection string.  See the
 <a class="reference external" href="https://docs.mongodb.com/manual/reference/connection-string/">connection string</a>
-documentation., defaults to “mongodb://127.0.0.1:27017”.</p></li>
-<li><p><strong>db_str</strong> – The database within mongodb that holds the readings,
-defaults to “FitHome”.</p></li>
+documentation.  Defaults to “mongodb://127.0.0.1:27017”.</p></li>
+<li><p><strong>db_str</strong> – The database within mongodb that holds the readings.
+Defaults to “FitHome”.</p></li>
 <li><p><strong>collection_name</strong> – The collection within the database where the
-readings are stored.,defaults to “aggregate”.</p></li>
+readings are stored. Defaults to “aggregate”.</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="method">
 <dt id="FHanalyze.analyze.Analyze.get_DataFrame_for_date">
-<code class="sig-name descname">get_DataFrame_for_date</code><span class="sig-paren">(</span><em class="sig-param">date='*'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_DataFrame_for_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_DataFrame_for_date" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="FHanalyze.analyze.Analyze.get_isodate_list">
-<code class="sig-name descname">get_isodate_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_isodate_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_isodate_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list of dates is isodate format that contain active and
-reactive power readings.</p>
+<code class="sig-name descname">get_DataFrame_for_date</code><span class="sig-paren">(</span><em class="sig-param">date_str='*'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_DataFrame_for_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_DataFrame_for_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the active Power readings for a
+specific date or for all dates.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>list of isodates that contain power readings.</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>date</strong> – isodate formatted date or “*”.
+Defaults to “*”</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A pandas DataFrame with a dateindex and a
+column named ‘pA’ of active power readings.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="FHanalyze.analyze.Analyze.get_leakage_amount">
-<code class="sig-name descname">get_leakage_amount</code><span class="sig-paren">(</span><em class="sig-param">date='*'</em>, <em class="sig-param">start_time='*'</em>, <em class="sig-param">end_time='*'</em>, <em class="sig-param">quantile=0.3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_leakage_amount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_leakage_amount" title="Permalink to this definition">¶</a></dt>
-<dd><p>[summary]</p>
+<dt id="FHanalyze.analyze.Analyze.get_always_on_watts">
+<code class="sig-name descname">get_always_on_watts</code><span class="sig-paren">(</span><em class="sig-param">date_str='*'</em>, <em class="sig-param">start_time='*'</em>, <em class="sig-param">end_time='*'</em>, <em class="sig-param">quantile=0.3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_always_on_watts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_always_on_watts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the amount of power (in watts) that are wasted by appliances that
+are always plugged in and use electricity, even when the appliance is
+not being used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>date</strong> (<em>str</em><em>, </em><em>optional</em>) – [description], defaults to ‘*’</p></li>
-<li><p><strong>start_time</strong> (<em>str</em><em>, </em><em>optional</em>) – [description], defaults to ‘*’</p></li>
-<li><p><strong>end_time</strong> (<em>str</em><em>, </em><em>optional</em>) – [description], defaults to ‘*’</p></li>
-<li><p><strong>quantile</strong> (<em>float</em><em>, </em><em>optional</em>) – [description], defaults to .3</p></li>
+<li><p><strong>date_str</strong> – Either a date in isodate format to use readings in the
+calculation for that date or ‘*’ to use all available dates for
+the calculation.  Defaults to ‘*’</p></li>
+<li><p><strong>start_time</strong> – Use readings that are taken at this time.  The
+start_time is the beginning of an amount of time to filter
+results.  Defaults to ‘*’</p></li>
+<li><p><strong>end_time</strong> – Use readings that are taken before this time.
+end_time is used with start_time to filter readings to be
+within the time between start_time and end_time.  Defaults to ‘*’</p></li>
+<li><p><strong>quantile</strong> – A floating point number between 0 and 1 that cuts
+the distribution of readings.  For example, a value of .3 means
+the always_on_watts value is taken at the place where 30% of the
+readings are found.  Defaults to .3.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="FHanalyze.analyze.Analyze.get_isodate_list">
+<code class="sig-name descname">get_isodate_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/FHanalyze/analyze.html#Analyze.get_isodate_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#FHanalyze.analyze.Analyze.get_isodate_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of dates in isodate format that contain active and
+reactive power readings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of isodates that contain power readings.</p>
 </dd>
 </dl>
 </dd></dl>
